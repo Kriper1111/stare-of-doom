@@ -1,0 +1,14 @@
+[{
+    "modid": "stare-of-doom",
+    "name": "Stare of Doom",
+    "description": "Stare at someone hard enough that they explode",
+    "version": "${version}",
+    "mcversion": "1.7.10",
+    "url": "",
+    "updateUrl": "",
+    "authorList": [ "KriperIVI" ],
+    "credits": "Everlasting hatred for Skeletons",
+    "logofile": "",
+    "screenshots": [],
+    "dependencies": []
+}]

@@ -1,0 +1,143 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            name = "forge"
+            url = "https://maven.minecraftforge.net/"
+        }
+        maven {
+            name = "sonatype"
+            url = "https://oss.sonatype.org/content/repositories/snapshots/"
+        }
+        maven {
+            url = "https://jitpack.io"
+        }
+    }
+    dependencies {
+        classpath 'com.github.GTNewHorizons:ForgeGradle:1.2.11'
+    }
+}
+
+repositories {
+    maven {
+        url = "https://jitpack.io"
+    }
+}
+
+apply plugin: 'forge'
+apply plugin: 'maven-publish'
+
+version = "$mod_version"
+group = "kriperivi.$mod_identifier" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = "$mod_identifier-$minecraft_version"
+
+System.out.println("Building $archivesBaseName version $mod_version for $minecraft_version forge $forge_version")
+
+minecraft {
+    version = "$minecraft_version-$forge_version"
+    runDir = "testingClient-$minecraft_version"
+    replace '${MOD_VERSION}', "$mod_version"
+}
+
+dependencies {
+    // you may put jars on which you depend on in ./libs
+    // or you may define them like so..
+    //compile "some.group:artifact:version:classifier"
+    //compile "some.group:artifact:version"
+      
+    // real examples
+    //compile 'com.mod-buildcraft:buildcraft:6.0.8:dev'  // adds buildcraft to the dev env
+    //compile 'com.googlecode.efficient-java-matrix-library:ejml:0.24' // adds ejml to the dev env
+
+    // for more info...
+    // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
+    // http://www.gradle.org/docs/current/userguide/dependency_management.html
+
+    implementation("com.github.LegacyModdingMC.UniMixins:unimixins-mixin-1.7.10:$unimixins_version")
+    compile("com.github.LegacyModdingMC.UniMixins:unimixins-all-1.7.10:$unimixins_version:dev")
+}
+
+runClient {
+//    extraJvmArgs = [ "--tweakClass", "org.spongepowered.asm.launch.MixinTweaker" ]
+    args("--tweakClass", "org.spongepowered.asm.launch.MixinTweaker")
+}
+
+runServer {
+    args("--tweakClass", "org.spongepowered.asm.launch.MixinTweaker")
+}
+
+def outSrgFile = "${tasks.compileJava.temporaryDir}/outSrg.srg"
+def outRefMapFile = "${tasks.compileJava.temporaryDir}/mixins.${mod_identifier}.refmap.json"
+
+processResources
+{
+    // this will ensure that this task is redone when the versions change.
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    // replace stuff in mcmod.info, nothing else
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+                
+        // replace version and mcversion
+        expand 'version':project.version, 'mcversion':project.minecraft.version
+    }
+        
+    // copy everything else, thats not the mcmod.info
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
+
+jar {
+    manifest {
+        attributes (
+                // This is the regular way of registering Mixin configs.
+                // Setting the tweak class allows Mixin to discover your mod.
+                'TweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
+                // Mixin will automatically register any configs specified here.
+                'MixinConfigs': "mixins.${mod_identifier}.json",
+
+                // If your mod also contains a Forge mod (marked by a @Mod annotation),
+                // these need to be set or it will get ignored.
+                // Note that a Forge mod is required for late mixins to work.
+                // Allow Forge to discover the Forge mod:
+                'FMLCorePluginContainsFMLMod': 'true',
+                'FMLAT': 'stare-of-doom_at.cfg'
+        )
+    }
+
+    from outRefMapFile;
+}
+
+tasks.compileJava.options.compilerArgs += ["-AreobfSrgFile=${tasks.reobf.srg}", "-AoutSrgFile=${outSrgFile}", "-AoutRefMapFile=${outRefMapFile}"];
+
+reobf {
+    addExtraSrgFile outSrgFile
+}
+
+afterEvaluate {
+    File uni = configurations.compileClasspath.findAll { it.name.contains("unimixins-all-") || it.name.contains("unimixins-mixin-") || it.name.contains("unimixins-0.") }.first()
+    runClient {
+        extraJvmArgs.add(
+                '-javaagent:' + uni.getPath()
+        )
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId = "kriperivi.$mod_identifier"
+            artifactId = "$mod_identifier"
+            version = "$minecraft_version-$mod_version"
+
+            artifact jar
+        }
+    }
+    repositories {
+        maven {
+            url "file:///${project.projectDir}/build-artifacts"
+        }
+    }
+}
