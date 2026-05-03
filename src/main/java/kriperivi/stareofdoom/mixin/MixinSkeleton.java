@@ -65,7 +65,11 @@ abstract class MixinSkeleton extends EntityLiving {
         }
 
         if (ticksStaredIn != ticksStaredOut) {
-            this.getEntityData().setLong(TAG_NAME, ticksStaredOut);
+            if (ticksStaredOut == 0  && isSpared) {
+                this.getEntityData().removeTag(TAG_NAME);
+            } else {
+                this.getEntityData().setLong(TAG_NAME, ticksStaredOut);
+            }
         }
     }
 
@@ -78,7 +82,6 @@ abstract class MixinSkeleton extends EntityLiving {
             this.worldObj.playSoundEffect(this.posX, this.posY, this.posZ, "ambient.weather.thunder", 10000.0F, 0.8F + this.rand.nextFloat() * 0.2F);
             this.worldObj.playSoundEffect(this.posX, this.posY, this.posZ, "random.explode", 1.0F, 0.5F + this.rand.nextFloat() * 0.2F);
         }
-        this.kill();
         this.attackEntityFrom(DamageSource.outOfWorld, Float.MAX_VALUE);
     }
 
