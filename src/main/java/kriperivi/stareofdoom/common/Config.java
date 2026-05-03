@@ -7,7 +7,7 @@ import net.minecraftforge.common.config.Configuration;
 import static kriperivi.stareofdoom.StareOfDoom.LOGGER;
 
 public class Config {
-    public static double maxDistance;
+    public static float maxDistance;
     public static int stareThreshold;
     public static int stareFalloff;
     public static boolean strikeLightning;
@@ -21,7 +21,7 @@ public class Config {
         float stareCooldown = config.getFloat("stareCooldown", "doom", 0.2f, -1.0f, 60.0f, "How fast should the doom counter tick down if you're not looking at it.");
         strikeLightning = config.getBoolean("castLightning", "doom", true, "If the skeleton is eviscerated, should it get struck by lightning or disappear in smoke?");
 
-        maxDistance = Math.pow(distance, 2);
+        maxDistance = distance;
         stareThreshold = (int) (stareTime * 20);
         if (stareCooldown < 0.0) {
             stareFalloff = stareThreshold;

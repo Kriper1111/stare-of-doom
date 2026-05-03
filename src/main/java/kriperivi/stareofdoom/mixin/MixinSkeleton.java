@@ -1,7 +1,6 @@
 package kriperivi.stareofdoom.mixin;
 
 import kriperivi.stareofdoom.common.Config;
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.effect.EntityLightningBolt;
 import net.minecraft.entity.monster.EntitySkeleton;
@@ -34,7 +33,7 @@ abstract class MixinSkeleton extends EntityLiving {
             return;
         }
 
-        EntityPlayer player = Minecraft.getMinecraft().thePlayer;
+        EntityPlayer player = worldObj.getClosestPlayer(this.posX, this.posY, this.posZ, Config.maxDistance);
         if (player == null) {
             return;
         }
@@ -68,18 +67,13 @@ abstract class MixinSkeleton extends EntityLiving {
     }
 
     private long updateStaring(long ticksStared, EntityPlayer player, double diffX, double diffY, double diffZ) {
-        double tetherDistance = (diffX * diffX + diffY * diffY + diffZ * diffZ);
-
-        if (tetherDistance > Config.maxDistance) {
-            return 0;
-        }
+        double tetherDistance = Math.sqrt(diffX * diffX + diffY * diffY + diffZ * diffZ);
 
         if (!player.canEntityBeSeen(this)) {
             return 0;
         }
 
         Vec3 tether = Vec3.createVectorHelper(diffX, diffY, diffZ);
-        tetherDistance = Math.sqrt(tetherDistance);
 
         double dot = player.getLook(1.0F).normalize().dotProduct(tether.normalize());
 
