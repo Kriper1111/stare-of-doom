@@ -92,13 +92,13 @@ abstract class MixinSkeleton extends EntityLiving {
             return false;
         }
 
-        if (!player.canEntityBeSeen(this)) {
-            return false;
-        }
-
         Vec3 lookVector = player.getLookVec();
         tetherDistance = Math.sqrt(tetherDistance);
         double dot = (lookVector.xCoord * diffX + lookVector.yCoord * diffY + lookVector.zCoord * diffZ) / tetherDistance;
-        return (dot > (1.0 - 0.05 / tetherDistance));
+
+        if (dot < (1.0 - 0.05 / tetherDistance)) {
+            return false;
+        }
+        return player.canEntityBeSeen(this);
     }
 }
