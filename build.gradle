@@ -54,7 +54,7 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 
     implementation("com.github.LegacyModdingMC.UniMixins:unimixins-mixin-1.7.10:$unimixins_version")
-    compile("com.github.LegacyModdingMC.UniMixins:unimixins-all-1.7.10:$unimixins_version:dev")
+    // compile("com.github.LegacyModdingMC.UniMixins:unimixins-all-1.7.10:$unimixins_version:dev")
 }
 
 runClient {
