@@ -8,7 +8,7 @@
     "updateUrl": "",
     "authorList": [ "KriperIVI" ],
     "credits": "Everlasting hatred for Skeletons",
-    "logofile": "",
+    "logoFile": "modicon.png",
     "screenshots": [],
     "dependencies": [ "unimixins" ]
 }]
