@@ -36,7 +36,7 @@ System.out.println("Building $archivesBaseName version $mod_version for $minecra
 minecraft {
     version = "$minecraft_version-$forge_version"
     runDir = "testingClient-$minecraft_version"
-    replace '${MOD_VERSION}', "$mod_version"
+    replace '${version}', "$mod_version"
 }
 
 dependencies {
@@ -58,7 +58,6 @@ dependencies {
 }
 
 runClient {
-//    extraJvmArgs = [ "--tweakClass", "org.spongepowered.asm.launch.MixinTweaker" ]
     args("--tweakClass", "org.spongepowered.asm.launch.MixinTweaker")
 }
 
@@ -102,27 +101,19 @@ jar {
                 // these need to be set or it will get ignored.
                 // Note that a Forge mod is required for late mixins to work.
                 // Allow Forge to discover the Forge mod:
-                'FMLCorePluginContainsFMLMod': 'true',
-                'FMLAT': 'stare-of-doom_at.cfg'
+                'ForceLoadAsMod': 'true',
+                'FMLCorePluginContainsFMLMod': 'true'
         )
     }
 
     from outRefMapFile;
+    finalizedBy reobf;
 }
 
 tasks.compileJava.options.compilerArgs += ["-AreobfSrgFile=${tasks.reobf.srg}", "-AoutSrgFile=${outSrgFile}", "-AoutRefMapFile=${outRefMapFile}"];
 
 reobf {
     addExtraSrgFile outSrgFile
-}
-
-afterEvaluate {
-    File uni = configurations.compileClasspath.findAll { it.name.contains("unimixins-all-") || it.name.contains("unimixins-mixin-") || it.name.contains("unimixins-0.") }.first()
-    runClient {
-        extraJvmArgs.add(
-                '-javaagent:' + uni.getPath()
-        )
-    }
 }
 
 publishing {

@@ -34,7 +34,7 @@ public class Config {
     }
 
     public static float getSpreadCorrection() {
-        return 0.025f;
+        return 0.05f;
     }
 
     public static int getAUXSfxIdentifier() {

@@ -16,21 +16,21 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 
 import static kriperivi.stareofdoom.StareOfDoom.LOGGER;
+import static kriperivi.stareofdoom.StareOfDoom.TAG_NAME;
 
 @Mixin(EntitySkeleton.class)
 abstract class MixinSkeleton extends EntityLiving {
-    private long ticksStared = 0;
-
     public MixinSkeleton(World p_i45324_1_) {
         super(p_i45324_1_);
     }
 
-    @Inject(method = "onLivingUpdate", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "onLivingUpdate", at = @At("HEAD"))
     private void onLivingUpdate(CallbackInfo info) {
-        if (worldObj.isRemote) {
+        if (this.dead) {
             return;
         }
-        if (this.dead) {
+
+        if (this.worldObj == null || this.worldObj.isRemote) {
             return;
         }
 
@@ -43,41 +43,52 @@ abstract class MixinSkeleton extends EntityLiving {
         double diffY = this.boundingBox.minY + (double)(this.height / 2.0F) - (player.posY + (double)player.getEyeHeight());
         double diffZ = this.posZ - player.posZ;
 
-        double tetherDistance = (diffX * diffY * diffZ);
+        long ticksStared = this.getEntityData().getLong(TAG_NAME);
+        ticksStared = updateStaring(ticksStared, player, diffX, diffY, diffZ);
+        if (ticksStared >= Config.stareThreshold) {
+            eviscerate();
+            ticksStared = 0;
+        } else if (ticksStared < 0) {
+            ticksStared = 0;
+        }
+        this.getEntityData().setLong(TAG_NAME, ticksStared);
+    }
+
+    private void eviscerate() {
+        if (Config.strikeLightning) {
+            this.worldObj.addWeatherEffect(new EntityLightningBolt(this.worldObj, this.posX, this.posY, this.posZ));
+        } else {
+            // Spawn instant damage particle cloud, and still play the thunder sounds.
+            this.worldObj.playAuxSFX(2002, (int)Math.round(this.posX), (int)Math.round(this.posY), (int)Math.round(this.posZ), 16428);
+            this.worldObj.playSoundEffect(this.posX, this.posY, this.posZ, "ambient.weather.thunder", 10000.0F, 0.8F + this.rand.nextFloat() * 0.2F);
+            this.worldObj.playSoundEffect(this.posX, this.posY, this.posZ, "random.explode", 1.0F, 0.5F + this.rand.nextFloat() * 0.2F);
+        }
+        this.kill();
+        this.attackEntityFrom(DamageSource.outOfWorld, Float.MAX_VALUE);
+    }
+
+    private long updateStaring(long ticksStared, EntityPlayer player, double diffX, double diffY, double diffZ) {
+        double tetherDistance = (diffX * diffX + diffY * diffY + diffZ * diffZ);
 
         if (tetherDistance > Config.maxDistance) {
-            ticksStared = 0;
-            return;
+            return 0;
         }
 
         if (!player.canEntityBeSeen(this)) {
-            ticksStared = 0;
-            return;
+            return 0;
         }
 
-        LOGGER.info("[{}] Stare Timer = {} / {}", this.entityUniqueID, ticksStared, Config.stareThreshold);
         Vec3 tether = Vec3.createVectorHelper(diffX, diffY, diffZ);
         tetherDistance = Math.sqrt(tetherDistance);
 
         double dot = player.getLook(1.0F).normalize().dotProduct(tether.normalize());
 
-        if (dot < (1.0 - Config.getSpreadCorrection() / tetherDistance)) {
-            ticksStared = Math.max(ticksStared - Config.stareFalloff, 0);
-            return;
+        if (dot < (1.0 - 0.05 / tetherDistance)) {
+            return ticksStared - Config.stareFalloff;
         }
 
-        ticksStared += 1;
-        if (ticksStared >= Config.stareThreshold) {
-            if (Config.strikeLightning) {
-                this.worldObj.addWeatherEffect(new EntityLightningBolt(this.worldObj, this.posX, this.posY, this.posZ));
-            } else {
-                // Spawn instant damage particle cloud, and still play the thunder sounds.
-                this.worldObj.playAuxSFX(2002, (int)Math.round(this.posX), (int)Math.round(this.posY), (int)Math.round(this.posZ), 16428);
-                this.worldObj.playSoundEffect(this.posX, this.posY, this.posZ, "ambient.weather.thunder", 10000.0F, 0.8F + this.rand.nextFloat() * 0.2F);
-                this.worldObj.playSoundEffect(this.posX, this.posY, this.posZ, "random.explode", 1.0F, 0.5F + this.rand.nextFloat() * 0.2F);
-            }
-            this.attackEntityFrom(DamageSource.outOfWorld, Float.MAX_VALUE);
-            ticksStared = 0;
-        }
+        LOGGER.debug("[{}] Ticks Stared {}", getUniqueID(), ticksStared);
+
+        return ticksStared + 1;
     }
 }
