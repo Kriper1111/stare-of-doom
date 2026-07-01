@@ -7,8 +7,10 @@ import kriperivi.stareofdoom.common.Config;
 import kriperivi.stareofdoom.network.EntityStaredAt;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
@@ -47,7 +49,7 @@ public class StareAtEntity {
             return;
         }
 
-        EntityLiving pointedEntity = pickPointedEntity(theGame.renderViewEntity, theGame.theWorld, config.getMaxDistanceSquared());
+        EntityLivingBase pointedEntity = pickPointedEntity(theGame.renderViewEntity, theGame.theWorld, config.getMaxDistanceSquared());
         if (pointedEntity == null)
             return;
 
@@ -56,7 +58,7 @@ public class StareAtEntity {
         timer = 0;
     }
 
-    private static EntityLiving pickPointedEntity(EntityLivingBase ref, World world, double maxDist) {
+    private static EntityLivingBase pickPointedEntity(EntityLivingBase ref, World world, double maxDist) {
         int workCount = (int) Math.ceil(maxDist / 64) + 1;
         Vec3 position = ref.getPosition(0);
         Vec3 lookVector = ref.getLookVec();
@@ -70,7 +72,7 @@ public class StareAtEntity {
         double diffX, diffY, diffZ;
         double dist, dot;
 
-        EntityLiving it;
+        EntityLivingBase it;
         Vec3 itsPos;
         for (int work = 1; work < workCount; work++) {
             Vec3 center = position.addVector(lookVector.xCoord * 4 * work,
@@ -82,19 +84,19 @@ public class StareAtEntity {
             //noinspection unchecked
             List<Entity> entityList = world.getEntitiesWithinAABBExcludingEntity(ref, boundingBox);
             for (Entity entity : entityList) {
-                if (!(entity instanceof EntityLiving))
+                if (!(entity instanceof EntityLivingBase))
                     continue;
 
-                it = (EntityLiving) entity;
+                if (!entity.canBeCollidedWith())
+                    continue;
+
+                it = (EntityLivingBase) entity;
 
                 // Check: entity class (commandSenderName)
                 // Check: playerInCreative constraint
                 // Check: entity distance (+)
-                // DependsOn: complete Config class
-                //      Filled during ServerJoin
-                //      Purged during ServerQuit
 
-                if (!entity.canBeCollidedWith())
+                if (!matchConfigFilters(it))
                     continue;
 
                 itsPos = it.getPosition(0);
@@ -117,5 +119,32 @@ public class StareAtEntity {
         }
 
         return null;
+    }
+
+    private static boolean matchConfigFilters(EntityLivingBase entityLiving) {
+        // Handle the player case separately
+        if (entityLiving instanceof EntityPlayerMP) {
+            if (!MinecraftServer.getServer().isPVPEnabled())
+                return false;
+            if (config.doIgnorePlayers())
+                return false;
+            if (((EntityPlayerMP) entityLiving).capabilities.isCreativeMode && config.doIgnorePrivileged())
+                return false;
+            if (((EntityPlayerMP) entityLiving).canCommandSenderUseCommand(2, "") && config.doIgnorePrivileged())
+                return false;
+            return true;
+        }
+
+        String mobName = EntityList.getEntityString(entityLiving);
+        boolean includes = false;
+
+        for (String predicate : config.getMobs()) {
+            if (mobName.equals(predicate)) {
+                includes = true;
+                break;
+            }
+        }
+
+        return includes == config.isMobsWhitelist();
     }
 }

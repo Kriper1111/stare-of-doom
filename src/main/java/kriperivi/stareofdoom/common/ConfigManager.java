@@ -10,6 +10,8 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.common.config.Configuration;
 
+import java.util.List;
+
 import static kriperivi.stareofdoom.StareOfDoom.LOGGER;
 
 public class ConfigManager {
@@ -23,6 +25,10 @@ public class ConfigManager {
         int stareThreshold;
         int stareFalloff;
         boolean strikeLightning;
+        boolean mobsWhitelist;
+        boolean ignorePlayers;
+        boolean ignorePrivileged;
+        String[] mobs;
 
         float distance = configFile.getFloat("maxDistance", "doom",
                                              32.0f, 0, 64.0f,
@@ -34,6 +40,11 @@ public class ConfigManager {
         strikeLightning = configFile.getBoolean("castLightning", "doom", true,
                                                 "If the skeleton is eviscerated, should it get struck by lightning or disappear in smoke?");
 
+        mobs = configFile.getStringList("mobs", "doom", new String[]{"Skeleton"}, "A list of mobs to be subjected to the Stare.");
+        mobsWhitelist = configFile.getBoolean("mobsWhitelist", "doom", true, "If true, 'mobs' is an inclusive list, exclusive otherwise.");
+        ignorePlayers = configFile.getBoolean("ignorePlayers", "doom", true, "Exclude any player from the effects of the Stare.");
+        ignorePrivileged = configFile.getBoolean("ignorePrivileged", "doom", true, "Exclude OPs and Creative mode players from the Stare.");
+
         maxDistanceSquared = distance * distance;
         stareThreshold = (int) (stareTime * 20);
         if (stareCooldown < 0.0) {
@@ -42,7 +53,15 @@ public class ConfigManager {
             stareFalloff = (int) (stareCooldown * 20);
         }
 
-        serverConfig = new Config(maxDistanceSquared, stareThreshold, stareFalloff, strikeLightning);
+        serverConfig = new Config(
+                maxDistanceSquared,
+                stareThreshold,
+                stareFalloff,
+                strikeLightning,
+                mobs,
+                mobsWhitelist,
+                ignorePlayers,
+                ignorePrivileged);
 
         configFile.save();
         LOGGER.info("Successfully read and reloaded Stare of DOOM's config.");

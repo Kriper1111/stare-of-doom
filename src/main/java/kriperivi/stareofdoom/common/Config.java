@@ -12,6 +12,24 @@ public class Config implements IMessage {
     private int stareThreshold;
     private int stareFalloff;
     private boolean strikeLightning;
+    // TODO: Synchronize the mob list too.
+    private String[] mobs;
+    private boolean mobsWhitelist;
+    private boolean ignorePlayers;
+    private boolean ignorePrivileged;
+
+    public Config(double maxDistanceSquared, int stareThreshold, int stareFalloff, boolean strikeLightning,
+                  String[] mobs,
+                  boolean mobsWhitelist, boolean ignorePlayers, boolean ignorePrivileged) {
+        this.maxDistanceSquared = maxDistanceSquared;
+        this.stareThreshold = stareThreshold;
+        this.stareFalloff = stareFalloff;
+        this.strikeLightning = strikeLightning;
+        this.mobs = mobs;
+        this.mobsWhitelist = mobsWhitelist;
+        this.ignorePlayers = ignorePlayers;
+        this.ignorePrivileged = ignorePrivileged;
+    }
 
     public double getMaxDistanceSquared() {
         return maxDistanceSquared;
@@ -29,18 +47,27 @@ public class Config implements IMessage {
         return strikeLightning;
     }
 
+    public String[] getMobs() {
+        return mobs;
+    }
+
+    public boolean isMobsWhitelist() {
+        return mobsWhitelist;
+    }
+
+    public boolean doIgnorePlayers() {
+        return ignorePlayers;
+    }
+
+    public boolean doIgnorePrivileged() {
+        return ignorePrivileged;
+    }
+
     public Config() {
         maxDistanceSquared = 0;
         stareThreshold = 0;
         stareFalloff = 0;
         strikeLightning = false;
-    }
-
-    public Config(double maxDistanceSquared, int stareThreshold, int stareFalloff, boolean strikeLightning) {
-        this.maxDistanceSquared = maxDistanceSquared;
-        this.stareThreshold = stareThreshold;
-        this.stareFalloff = stareFalloff;
-        this.strikeLightning = strikeLightning;
     }
 
     @Override
@@ -49,6 +76,9 @@ public class Config implements IMessage {
         stareThreshold = buf.readInt();
         stareFalloff = buf.readInt();
         strikeLightning = buf.readBoolean();
+        mobsWhitelist = buf.readBoolean();
+        ignorePlayers = buf.readBoolean();
+        ignorePrivileged = buf.readBoolean();
     }
 
     @Override
@@ -57,6 +87,9 @@ public class Config implements IMessage {
         buf.writeInt(stareThreshold);
         buf.writeInt(stareFalloff);
         buf.writeBoolean(strikeLightning);
+        buf.writeBoolean(mobsWhitelist);
+        buf.writeBoolean(ignorePlayers);
+        buf.writeBoolean(ignorePrivileged);
     }
 
     public static class Handler implements IMessageHandler<Config, IMessage> {
