@@ -16,11 +16,16 @@ import net.minecraft.world.World;
 import java.util.List;
 
 public class DetectEntitiesEvent {
-    private static int timer = 0;
+    private static Config config = null;
     private final Minecraft theGame;
+    private int timer = 0;
 
     public DetectEntitiesEvent() {
         theGame = Minecraft.getMinecraft();
+    }
+
+    public static void setConfig(Config config) {
+        DetectEntitiesEvent.config = config;
     }
 
     @SubscribeEvent
@@ -34,13 +39,15 @@ public class DetectEntitiesEvent {
         if (theGame.isGamePaused())
             return;
 
+        if (config == null)
+            throw new AssertionError("Config was unexpectedly null!");
+
         if (timer != 5) {
             ++timer;
             return;
         }
 
-        EntityLiving pointedEntity =
-                pickPointedEntity(theGame.renderViewEntity, theGame.theWorld, Config.maxDistanceSquared);
+        EntityLiving pointedEntity = pickPointedEntity(theGame.renderViewEntity, theGame.theWorld, config.getMaxDistanceSquared());
         if (pointedEntity == null)
             return;
 
@@ -72,6 +79,7 @@ public class DetectEntitiesEvent {
             AxisAlignedBB boundingBox =
                     AxisAlignedBB.getBoundingBox(center.xCoord - 4, center.yCoord - 4, center.zCoord - 4,
                                                  center.xCoord + 4, center.yCoord + 4, center.zCoord + 4);
+            //noinspection unchecked
             List<Entity> entityList = world.getEntitiesWithinAABBExcludingEntity(ref, boundingBox);
             for (Entity entity : entityList) {
                 if (!(entity instanceof EntityLiving))

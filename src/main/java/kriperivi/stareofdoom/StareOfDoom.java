@@ -2,15 +2,18 @@ package kriperivi.stareofdoom;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
+import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import cpw.mods.fml.relauncher.Side;
-import kriperivi.stareofdoom.common.Config;
+import kriperivi.stareofdoom.common.ConfigManager;
 import kriperivi.stareofdoom.common.DropListener;
-import kriperivi.stareofdoom.event.DetectEntitiesEvent;
+import kriperivi.stareofdoom.event.ConfigManagement;
 import kriperivi.stareofdoom.network.EntityStaredAt;
+import kriperivi.stareofdoom.network.ConfigHello;
+import kriperivi.stareofdoom.proxy.Proxy;
 import net.minecraftforge.common.MinecraftForge;
 import org.apache.logging.log4j.Logger;
 
@@ -23,18 +26,22 @@ public class StareOfDoom {
     public static Logger LOGGER;
     public static final SimpleNetworkWrapper PACKET_HANDLER = NetworkRegistry.INSTANCE.newSimpleChannel(MOD_ID);
 
+    @SidedProxy(clientSide = "kriperivi.stareofdoom.proxy.ClientProxy", serverSide = "kriperivi.stareofdoom.proxy.Proxy")
+    public static Proxy proxy;
+
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         LOGGER = event.getModLog();
         LOGGER.debug("Hello from Stare of DOOM!!");
-        Config.init(event);
+        ConfigManager.init(event);
+        proxy.preInit(event);
         MinecraftForge.EVENT_BUS.register(new DropListener());
-        FMLCommonHandler.instance().bus().register(new DetectEntitiesEvent());
+        FMLCommonHandler.instance().bus().register(new ConfigManagement());
     }
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
-        LOGGER.debug("Stare of Doom -> Init");
         PACKET_HANDLER.registerMessage(EntityStaredAt.Handler.class, EntityStaredAt.class, 0, Side.SERVER);
+        PACKET_HANDLER.registerMessage(ConfigHello.Handler.class, ConfigHello.class, 1, Side.CLIENT);
     }
 }

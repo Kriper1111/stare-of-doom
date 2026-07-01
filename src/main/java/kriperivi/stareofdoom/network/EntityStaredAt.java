@@ -4,9 +4,8 @@ import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
-import cpw.mods.fml.relauncher.Side;
 import io.netty.buffer.ByteBuf;
-import kriperivi.stareofdoom.common.Config;
+import kriperivi.stareofdoom.common.ConfigManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.effect.EntityLightningBolt;
 import net.minecraft.nbt.NBTTagCompound;
@@ -66,7 +65,7 @@ public class EntityStaredAt implements IMessage {
         }
 
         private static void eviscerate(World worldObj, Entity entity) {
-            if (Config.strikeLightning) {
+            if (ConfigManager.getServerConfig().doStrikeLightning()) {
                 worldObj.addWeatherEffect(new EntityLightningBolt(worldObj, entity.posX, entity.posY, entity.posZ));
             } else {
                 // Spawn instant damage particle cloud, and still play the thunder sounds.

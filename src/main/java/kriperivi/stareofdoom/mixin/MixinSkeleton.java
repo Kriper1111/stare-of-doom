@@ -1,6 +1,7 @@
 package kriperivi.stareofdoom.mixin;
 
 import kriperivi.stareofdoom.common.Config;
+import kriperivi.stareofdoom.common.ConfigManager;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.effect.EntityLightningBolt;
 import net.minecraft.entity.monster.EntitySkeleton;
@@ -18,6 +19,7 @@ import java.util.List;
 
 import static kriperivi.stareofdoom.StareOfDoom.TAG_NAME;
 
+@Deprecated
 @Mixin(EntitySkeleton.class)
 abstract class MixinSkeleton extends EntityLiving {
     public MixinSkeleton(World p_i45324_1_) {
@@ -26,6 +28,7 @@ abstract class MixinSkeleton extends EntityLiving {
 
     @Inject(method = "onLivingUpdate", at = @At("HEAD"))
     private void onLivingUpdate(CallbackInfo info) {
+        Config config = ConfigManager.getServerConfig();
         if (this.dead) {
             return;
         }
@@ -50,10 +53,10 @@ abstract class MixinSkeleton extends EntityLiving {
             double diffZ = this.posZ - player.posZ;
 
             if (isBeingStaredAt(player, diffX, diffY, diffZ)) {
-                ticksStaredOut = Math.min(ticksStaredOut + 1, Config.stareThreshold);
+                ticksStaredOut = Math.min(ticksStaredOut + 1, config.getStareThreshold());
                 isSpared = false;
             }
-            if (ticksStaredOut >= Config.stareThreshold) {
+            if (ticksStaredOut >= config.getStareThreshold()) {
                 eviscerate();
                 ticksStaredOut = 0;
                 break;
@@ -61,7 +64,7 @@ abstract class MixinSkeleton extends EntityLiving {
         }
 
         if (isSpared) {
-            ticksStaredOut = Math.max(ticksStaredOut - Config.stareFalloff, 0);
+            ticksStaredOut = Math.max(ticksStaredOut - config.getStareFalloff(), 0);
         }
 
         if (ticksStaredIn != ticksStaredOut) {
@@ -74,7 +77,8 @@ abstract class MixinSkeleton extends EntityLiving {
     }
 
     private void eviscerate() {
-        if (Config.strikeLightning) {
+        Config config = ConfigManager.getServerConfig();
+        if (config.doStrikeLightning()) {
             this.worldObj.addWeatherEffect(new EntityLightningBolt(this.worldObj, this.posX, this.posY, this.posZ));
         } else {
             // Spawn instant damage particle cloud, and still play the thunder sounds.
@@ -86,9 +90,10 @@ abstract class MixinSkeleton extends EntityLiving {
     }
 
     private boolean isBeingStaredAt(EntityPlayer player, double diffX, double diffY, double diffZ) {
+        Config config = ConfigManager.getServerConfig();
         double tetherDistance = diffX * diffX + diffY * diffY + diffZ * diffZ;
 
-        if (tetherDistance > Config.maxDistanceSquared) {
+        if (tetherDistance > config.getMaxDistanceSquared()) {
             return false;
         }
 
