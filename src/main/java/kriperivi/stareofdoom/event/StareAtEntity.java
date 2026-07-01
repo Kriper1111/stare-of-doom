@@ -15,12 +15,12 @@ import net.minecraft.world.World;
 
 import java.util.List;
 
-public class DetectEntitiesEvent {
+public class StareAtEntity {
     private static Config config = null;
     private final Minecraft theGame;
     private int timer = 0;
 
-    public DetectEntitiesEvent() {
+    public StareAtEntity() {
         theGame = Minecraft.getMinecraft();
     }
 

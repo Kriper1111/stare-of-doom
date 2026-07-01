@@ -5,7 +5,7 @@ import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import io.netty.buffer.ByteBuf;
 import kriperivi.stareofdoom.StareOfDoom;
-import kriperivi.stareofdoom.event.DetectEntitiesEvent;
+import kriperivi.stareofdoom.event.StareAtEntity;
 
 public class Config implements IMessage {
     private double maxDistanceSquared;
@@ -64,7 +64,7 @@ public class Config implements IMessage {
         @Override
         public IMessage onMessage(Config message, MessageContext ctx) {
             StareOfDoom.LOGGER.info("Received SetupConfig message from server, updating.");
-            DetectEntitiesEvent.setConfig(message);
+            StareAtEntity.setConfig(message);
             return null;
         }
     }

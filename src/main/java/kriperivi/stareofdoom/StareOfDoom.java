@@ -11,7 +11,6 @@ import cpw.mods.fml.relauncher.Side;
 import kriperivi.stareofdoom.common.Config;
 import kriperivi.stareofdoom.common.ConfigManager;
 import kriperivi.stareofdoom.common.DropListener;
-import kriperivi.stareofdoom.event.ConfigManagement;
 import kriperivi.stareofdoom.network.EntityStaredAt;
 import kriperivi.stareofdoom.proxy.Proxy;
 import net.minecraftforge.common.MinecraftForge;
@@ -23,8 +22,10 @@ public class StareOfDoom {
     public static final String MOD_ID = "stare-of-doom";
     public static final String VERSION = "${version}";
     public static final String TAG_NAME = "sod_doom_timer";
-    public static Logger LOGGER;
     public static final SimpleNetworkWrapper PACKET_HANDLER = NetworkRegistry.INSTANCE.newSimpleChannel(MOD_ID);
+
+    public static Logger LOGGER;
+    public static ConfigManager CONFIG;
 
     @SidedProxy(clientSide = "kriperivi.stareofdoom.proxy.ClientProxy", serverSide = "kriperivi.stareofdoom.proxy.Proxy")
     public static Proxy proxy;
@@ -33,10 +34,10 @@ public class StareOfDoom {
     public void preInit(FMLPreInitializationEvent event) {
         LOGGER = event.getModLog();
         LOGGER.debug("Hello from Stare of DOOM!!");
-        ConfigManager.init(event);
+        CONFIG = new ConfigManager(event);
         proxy.preInit(event);
         MinecraftForge.EVENT_BUS.register(new DropListener());
-        FMLCommonHandler.instance().bus().register(new ConfigManagement());
+        FMLCommonHandler.instance().bus().register(CONFIG);
     }
 
     @Mod.EventHandler

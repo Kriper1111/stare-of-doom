@@ -1,29 +1,38 @@
 package kriperivi.stareofdoom.common;
 
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.PlayerEvent;
+import cpw.mods.fml.common.network.FMLNetworkEvent;
+import kriperivi.stareofdoom.StareOfDoom;
+import kriperivi.stareofdoom.event.StareAtEntity;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.common.config.Configuration;
-
 
 import static kriperivi.stareofdoom.StareOfDoom.LOGGER;
 
-// TODO: Make non-static so serverConfig can be final
 public class ConfigManager {
-    private static Config serverConfig = null;
+    private final Config serverConfig;
 
-    public static void init(FMLPreInitializationEvent evt) {
-        Configuration config = new Configuration(evt.getSuggestedConfigurationFile());
-        config.load();
+    public ConfigManager(FMLPreInitializationEvent evt) {
+        Configuration configFile = new Configuration(evt.getSuggestedConfigurationFile());
+        configFile.load();
 
         double maxDistanceSquared;
         int stareThreshold;
         int stareFalloff;
         boolean strikeLightning;
 
-        float distance = config.getFloat("maxDistance", "doom", 32.0f, 0, 64.0f, "Maximum distance between you and the skeleton after which it's no longer doomed.");
-        float stareTime = config.getFloat("stareTime", "doom", 5.0f, 0.2f, 60.0f, "How long do you have to stare at the skeleton until it's eviscerated.");
-        float stareCooldown = config.getFloat("stareCooldown", "doom", 0.2f, -1.0f, 60.0f, "How fast should the doom counter tick down if you're not looking at it.");
-        strikeLightning = config.getBoolean("castLightning", "doom", true, "If the skeleton is eviscerated, should it get struck by lightning or disappear in smoke?");
+        float distance = configFile.getFloat("maxDistance", "doom",
+                                             32.0f, 0, 64.0f,
+                                             "Maximum distance between you and the skeleton after which it's no longer doomed.");
+        float stareTime = configFile.getFloat("stareTime", "doom", 5.0f, 0.2f, 60.0f,
+                                              "How long do you have to stare at the skeleton until it's eviscerated.");
+        float stareCooldown = configFile.getFloat("stareCooldown", "doom", 0.2f, -1.0f, 60.0f,
+                                                  "How fast should the doom counter tick down if you're not looking at it.");
+        strikeLightning = configFile.getBoolean("castLightning", "doom", true,
+                                                "If the skeleton is eviscerated, should it get struck by lightning or disappear in smoke?");
 
         maxDistanceSquared = distance * distance;
         stareThreshold = (int) (stareTime * 20);
@@ -35,11 +44,11 @@ public class ConfigManager {
 
         serverConfig = new Config(maxDistanceSquared, stareThreshold, stareFalloff, strikeLightning);
 
-        config.save();
+        configFile.save();
         LOGGER.info("Successfully read and reloaded Stare of DOOM's config.");
     }
 
-    public static Config getServerConfig() {
+    public Config getServerConfig() {
         return serverConfig;
     }
 
@@ -53,5 +62,28 @@ public class ConfigManager {
 
     public static int getAUXSfxValue() {
         return 16428;
+    }
+
+    @SubscribeEvent
+    // Server-side. Send welcome messages to the player, stating our connection.
+    public void playerJoined(PlayerEvent.PlayerLoggedInEvent event) {
+        if (!(event.player instanceof EntityPlayerMP))
+            throw new AssertionError("Logged in player was not EntityPlayerMP!");
+
+        MinecraftServer server = MinecraftServer.getServer();
+        EntityPlayerMP player = (EntityPlayerMP) event.player;
+
+        String playerName = player.getGameProfile().getName();
+        String ownerName = server.getServerOwner();
+
+        if (server.isSinglePlayer() && playerName.equals(ownerName))
+            StareAtEntity.setConfig(serverConfig);
+        else
+            StareOfDoom.PACKET_HANDLER.sendTo(serverConfig, player);
+    }
+
+    @SubscribeEvent
+    public void playerLeft(FMLNetworkEvent.ClientDisconnectionFromServerEvent event) {
+        StareAtEntity.setConfig(null);
     }
 }
