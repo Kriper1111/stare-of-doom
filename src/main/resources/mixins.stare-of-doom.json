@@ -4,7 +4,7 @@
   "package": "kriperivi.stareofdoom.mixin",
   "refmap": "mixins.stare-of-doom.refmap.json",
   "compatibilityLevel": "JAVA_8",
-  "mixins": [
+  "~mixins": [
     "MixinSkeleton"
   ]
 }
