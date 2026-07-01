@@ -8,11 +8,11 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import cpw.mods.fml.relauncher.Side;
+import kriperivi.stareofdoom.common.Config;
 import kriperivi.stareofdoom.common.ConfigManager;
 import kriperivi.stareofdoom.common.DropListener;
 import kriperivi.stareofdoom.event.ConfigManagement;
 import kriperivi.stareofdoom.network.EntityStaredAt;
-import kriperivi.stareofdoom.network.ConfigHello;
 import kriperivi.stareofdoom.proxy.Proxy;
 import net.minecraftforge.common.MinecraftForge;
 import org.apache.logging.log4j.Logger;
@@ -42,6 +42,6 @@ public class StareOfDoom {
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
         PACKET_HANDLER.registerMessage(EntityStaredAt.Handler.class, EntityStaredAt.class, 0, Side.SERVER);
-        PACKET_HANDLER.registerMessage(ConfigHello.Handler.class, ConfigHello.class, 1, Side.CLIENT);
+        PACKET_HANDLER.registerMessage(Config.Handler.class, Config.class, 1, Side.CLIENT);
     }
 }

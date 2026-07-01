@@ -24,8 +24,8 @@ public class DetectEntitiesEvent {
         theGame = Minecraft.getMinecraft();
     }
 
-    public static void setConfig(Config config) {
-        DetectEntitiesEvent.config = config;
+    public static void setConfig(Config newConfig) {
+        config = newConfig;
     }
 
     @SubscribeEvent

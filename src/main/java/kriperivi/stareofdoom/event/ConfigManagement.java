@@ -5,7 +5,6 @@ import cpw.mods.fml.common.gameevent.PlayerEvent;
 import cpw.mods.fml.common.network.FMLNetworkEvent;
 import kriperivi.stareofdoom.StareOfDoom;
 import kriperivi.stareofdoom.common.ConfigManager;
-import kriperivi.stareofdoom.network.ConfigHello;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 
@@ -25,7 +24,7 @@ public class ConfigManagement {
         if (server.isSinglePlayer() && playerName.equals(ownerName))
             DetectEntitiesEvent.setConfig(ConfigManager.getServerConfig());
         else
-            StareOfDoom.PACKET_HANDLER.sendTo(new ConfigHello(ConfigManager.getServerConfig()), player);
+            StareOfDoom.PACKET_HANDLER.sendTo(ConfigManager.getServerConfig(), player);
     }
 
     @SubscribeEvent
