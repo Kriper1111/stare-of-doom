@@ -20,6 +20,7 @@ public class StareAtEntity {
     private static Config config = null;
     private static HashSet<String> mobFilterList = null;
     private final Minecraft theGame;
+    private EntityLivingBase lastMatch = null;
     private int timer = 0;
 
     public StareAtEntity() {
@@ -53,13 +54,39 @@ public class StareAtEntity {
             return;
         }
 
-        EntityLivingBase pointedEntity = pickPointedEntity(theGame.renderViewEntity, theGame.theWorld, config.getMaxDistanceSquared());
-        if (pointedEntity == null)
-            return;
-
-        StareOfDoom.LOGGER.info("Picked entity {}", pointedEntity);
-        StareOfDoom.PACKET_HANDLER.sendToServer(new EntityStaredAt(pointedEntity.getEntityId()));
         timer = 0;
+        EntityLivingBase it = checkLastMatch(theGame.renderViewEntity, config.getMaxDistanceSquared());
+
+        if (it == null) {
+            it = pickPointedEntity(theGame.renderViewEntity, theGame.theWorld, config.getMaxDistanceSquared());
+            lastMatch = it;
+            if (it == null) {
+                return;
+            }
+        }
+
+        StareOfDoom.LOGGER.info("Picked entity {}", it);
+        StareOfDoom.PACKET_HANDLER.sendToServer(new EntityStaredAt(it.getEntityId()));
+    }
+
+    private EntityLivingBase checkLastMatch(EntityLivingBase ref, double maxDist) {
+        if (lastMatch == null)
+            return null;
+
+        if (lastMatch.isDead)
+            return null;
+
+        if (entityIsDying(lastMatch))
+            return null;
+
+        if (isEntityNotObserved(ref, lastMatch, maxDist))
+            return null;
+
+        return lastMatch;
+    }
+
+    private static boolean entityIsDying(EntityLivingBase ent) {
+        return !ent.isEntityAlive();
     }
 
     private static EntityLivingBase pickPointedEntity(EntityLivingBase ref, World world, double maxDist) {
@@ -73,11 +100,7 @@ public class StareAtEntity {
         // But what if our render distance is too small for that?
         // Well then we can't *see* it, duh, so we can't explode it.
 
-        double diffX, diffY, diffZ;
-        double dist, dot;
-
         EntityLivingBase it;
-        Vec3 itsPos;
         for (int work = 1; work < workCount; work++) {
             Vec3 center = position.addVector(lookVector.xCoord * 4 * work,
                                              lookVector.yCoord * 4 * work,
@@ -96,22 +119,13 @@ public class StareAtEntity {
 
                 it = (EntityLivingBase) entity;
 
+                if (entityIsDying(it))
+                    continue;
+
                 if (!matchConfigFilters(it))
                     continue;
 
-                itsPos = it.getPosition(0);
-                diffX = itsPos.xCoord - position.xCoord;
-                diffY = itsPos.yCoord - position.yCoord + it.getEyeHeight() + ref.getEyeHeight();
-                diffZ = itsPos.zCoord - position.zCoord;
-
-                dist = diffX * diffX + diffY * diffY + diffZ * diffZ;
-                if (dist > maxDist)
-                    continue;
-
-                dist = Math.sqrt(dist);
-                dot = (lookVector.xCoord * diffX + lookVector.yCoord * diffY + lookVector.zCoord * diffZ) / dist;
-
-                if (dot < (1.0 - 0.05 / dist))
+                if (isEntityNotObserved(ref, it, maxDist))
                     continue;
 
                 return it;
@@ -119,6 +133,30 @@ public class StareAtEntity {
         }
 
         return null;
+    }
+
+    private static boolean isEntityNotObserved(EntityLivingBase ref, EntityLivingBase tar, double maxDist) {
+        double diffX, diffY, diffZ;
+        double dist, dot;
+
+        Vec3 lookVector = ref.getLookVec();
+        Vec3 refPos = ref.getPosition(0);
+        Vec3 itsPos = tar.getPosition(0);
+        diffX = itsPos.xCoord - refPos.xCoord;
+        diffY = itsPos.yCoord - refPos.yCoord + tar.getEyeHeight() + ref.getEyeHeight();
+        diffZ = itsPos.zCoord - refPos.zCoord;
+
+        dist = diffX * diffX + diffY * diffY + diffZ * diffZ;
+        if (dist > maxDist)
+            return true;
+
+        dist = Math.sqrt(dist);
+        dot = (lookVector.xCoord * diffX + lookVector.yCoord * diffY + lookVector.zCoord * diffZ) / dist;
+
+        if (dot < (1.0 - 0.05 / dist))
+            return true;
+
+        return !ref.canEntityBeSeen(tar);
     }
 
     // TODO: Do all this on server-side.
