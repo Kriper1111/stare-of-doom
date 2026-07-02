@@ -9,16 +9,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
+import java.util.HashSet;
 import java.util.List;
 
 public class StareAtEntity {
     private static Config config = null;
+    private static HashSet<String> mobFilterList = null;
     private final Minecraft theGame;
     private int timer = 0;
 
@@ -28,6 +28,10 @@ public class StareAtEntity {
 
     public static void setConfig(Config newConfig) {
         config = newConfig;
+    }
+
+    public static void setMobFilterList(HashSet<String> filterList) {
+        mobFilterList = filterList;
     }
 
     @SubscribeEvent
@@ -41,8 +45,8 @@ public class StareAtEntity {
         if (theGame.isGamePaused())
             return;
 
-        if (config == null)
-            throw new AssertionError("Config was unexpectedly null!");
+        if (config == null || mobFilterList == null)
+            return;
 
         if (timer != 5) {
             ++timer;
@@ -92,10 +96,6 @@ public class StareAtEntity {
 
                 it = (EntityLivingBase) entity;
 
-                // Check: entity class (commandSenderName)
-                // Check: playerInCreative constraint
-                // Check: entity distance (+)
-
                 if (!matchConfigFilters(it))
                     continue;
 
@@ -121,29 +121,25 @@ public class StareAtEntity {
         return null;
     }
 
+    // TODO: Do all this on server-side.
+    // Figure out why MinecraftServer.getServer() is null
+    // Perhaps move the player stuff onto the server?
+    // Hmm...
     private static boolean matchConfigFilters(EntityLivingBase entityLiving) {
-        // Handle the player case separately
-        if (entityLiving instanceof EntityPlayerMP) {
-            if (!MinecraftServer.getServer().isPVPEnabled())
-                return false;
-            if (config.doIgnorePlayers())
-                return false;
-            if (((EntityPlayerMP) entityLiving).capabilities.isCreativeMode && config.doIgnorePrivileged())
-                return false;
-            if (((EntityPlayerMP) entityLiving).canCommandSenderUseCommand(2, "") && config.doIgnorePrivileged())
-                return false;
-            return true;
-        }
+        // TODO: Handle the players somehow.
+//        if (entityLiving instanceof EntityOtherPlayerMP) {
+//            if (!MinecraftServer.getServer().isPVPEnabled())
+//                return false;
+//            if (config.doIgnorePlayers())
+//                return false;
+//            if (((EntityOtherPlayerMP) entityLiving).capabilities.isCreativeMode && config.doIgnorePrivileged())
+//                return false;
+//            if (((EntityOtherPlayerMP) entityLiving).canCommandSenderUseCommand(2, "") && config.doIgnorePrivileged())
+//                return false;
+//            return true;
+//        }
 
-        String mobName = EntityList.getEntityString(entityLiving);
-        boolean includes = false;
-
-        for (String predicate : config.getMobs()) {
-            if (mobName.equals(predicate)) {
-                includes = true;
-                break;
-            }
-        }
+        boolean includes = mobFilterList.contains(EntityList.getEntityString(entityLiving));
 
         return includes == config.isMobsWhitelist();
     }

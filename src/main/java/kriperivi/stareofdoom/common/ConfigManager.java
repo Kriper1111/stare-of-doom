@@ -6,11 +6,11 @@ import cpw.mods.fml.common.gameevent.PlayerEvent;
 import cpw.mods.fml.common.network.FMLNetworkEvent;
 import kriperivi.stareofdoom.StareOfDoom;
 import kriperivi.stareofdoom.event.StareAtEntity;
+import kriperivi.stareofdoom.network.ConfigStringExchange;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.common.config.Configuration;
 
-import java.util.List;
 
 import static kriperivi.stareofdoom.StareOfDoom.LOGGER;
 
@@ -95,14 +95,23 @@ public class ConfigManager {
         String playerName = player.getGameProfile().getName();
         String ownerName = server.getServerOwner();
 
-        if (server.isSinglePlayer() && playerName.equals(ownerName))
+        if (server.isSinglePlayer() && playerName.equals(ownerName)) {
             StareAtEntity.setConfig(serverConfig);
-        else
+            StareAtEntity.setMobFilterList(serverConfig.getMobFilterList());
+        }
+        else {
             StareOfDoom.PACKET_HANDLER.sendTo(serverConfig, player);
+            StareOfDoom.PACKET_HANDLER.sendTo(new ConfigStringExchange(serverConfig), player);
+        }
     }
 
     @SubscribeEvent
     public void playerLeft(FMLNetworkEvent.ClientDisconnectionFromServerEvent event) {
         StareAtEntity.setConfig(null);
+        StareAtEntity.setMobFilterList(null);
+    }
+
+    public void verifyEntityList() {
+        serverConfig.buildEntityHash();
     }
 }

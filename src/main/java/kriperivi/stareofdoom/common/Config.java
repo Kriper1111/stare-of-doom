@@ -6,17 +6,21 @@ import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import io.netty.buffer.ByteBuf;
 import kriperivi.stareofdoom.StareOfDoom;
 import kriperivi.stareofdoom.event.StareAtEntity;
+import net.minecraft.entity.EntityList;
+
+import java.util.HashSet;
 
 public class Config implements IMessage {
-    private double maxDistanceSquared;
-    private int stareThreshold;
-    private int stareFalloff;
-    private boolean strikeLightning;
+    private double maxDistanceSquared = 0;
+    private int stareThreshold = 0;
+    private int stareFalloff = 0;
+    private boolean strikeLightning = false;
     // TODO: Synchronize the mob list too.
-    private String[] mobs;
-    private boolean mobsWhitelist;
-    private boolean ignorePlayers;
-    private boolean ignorePrivileged;
+    private String[] mobs = null;
+    private HashSet<String> mobFilterList = new HashSet<String>();
+    private boolean mobsWhitelist = true;
+    private boolean ignorePlayers = true;
+    private boolean ignorePrivileged = true;
 
     public Config(double maxDistanceSquared, int stareThreshold, int stareFalloff, boolean strikeLightning,
                   String[] mobs,
@@ -47,8 +51,8 @@ public class Config implements IMessage {
         return strikeLightning;
     }
 
-    public String[] getMobs() {
-        return mobs;
+    public HashSet<String> getMobFilterList() {
+        return mobFilterList;
     }
 
     public boolean isMobsWhitelist() {
@@ -63,12 +67,7 @@ public class Config implements IMessage {
         return ignorePrivileged;
     }
 
-    public Config() {
-        maxDistanceSquared = 0;
-        stareThreshold = 0;
-        stareFalloff = 0;
-        strikeLightning = false;
-    }
+    public Config() { }
 
     @Override
     public void fromBytes(ByteBuf buf) {
@@ -90,6 +89,23 @@ public class Config implements IMessage {
         buf.writeBoolean(mobsWhitelist);
         buf.writeBoolean(ignorePlayers);
         buf.writeBoolean(ignorePrivileged);
+    }
+
+    protected void buildEntityHash() {
+        for (String mobName : mobs) {
+            Object entity = EntityList.stringToClassMapping.get(mobName);
+            if (entity == null) {
+                StareOfDoom.LOGGER.warn("Config -> entity '{}' is not found. Skipping it.", mobName);
+                continue;
+            }
+
+            if (mobName.length() > 512) {
+                StareOfDoom.LOGGER.warn("Long mob name detected! Are you sure what you're doing is worth it?");
+                StareOfDoom.LOGGER.warn("The culprit is '{}'. Skipping.", mobName);
+                continue;
+            }
+            mobFilterList.add(mobName);
+        }
     }
 
     public static class Handler implements IMessageHandler<Config, IMessage> {
