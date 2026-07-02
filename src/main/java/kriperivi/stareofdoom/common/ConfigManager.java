@@ -32,18 +32,18 @@ public class ConfigManager {
 
         float distance = configFile.getFloat("maxDistance", "doom",
                                              32.0f, 0, 64.0f,
-                                             "Maximum distance between you and the skeleton after which it's no longer doomed.");
+                                             "Maximum distance between you and the mob beyond which it's no longer doomed.");
         float stareTime = configFile.getFloat("stareTime", "doom", 5.0f, 0.2f, 60.0f,
                                               "How long do you have to stare at the skeleton until it's eviscerated.");
         float stareCooldown = configFile.getFloat("stareCooldown", "doom", 0.2f, -1.0f, 60.0f,
                                                   "How fast should the doom counter tick down if you're not looking at it.");
         strikeLightning = configFile.getBoolean("castLightning", "doom", true,
-                                                "If the skeleton is eviscerated, should it get struck by lightning or disappear in smoke?");
+                                                "If the mob is eviscerated, should it get struck by lightning or disappear in smoke?");
 
         mobs = configFile.getStringList("mobs", "doom", new String[]{"Skeleton"}, "A list of mobs to be subjected to the Stare.");
         mobsWhitelist = configFile.getBoolean("mobsWhitelist", "doom", true, "If true, 'mobs' is an inclusive list, exclusive otherwise.");
-        ignorePlayers = configFile.getBoolean("ignorePlayers", "doom", true, "Exclude any player from the effects of the Stare.");
-        ignorePrivileged = configFile.getBoolean("ignorePrivileged", "doom", true, "Exclude OPs and Creative mode players from the Stare.");
+//        ignorePlayers = configFile.getBoolean("ignorePlayers", "doom", true, "Exclude any player from the effects of the Stare.");
+//        ignorePrivileged = configFile.getBoolean("ignorePrivileged", "doom", true, "Exclude OPs and Creative mode players from the Stare.");
 
         maxDistanceSquared = distance * distance;
         stareThreshold = (int) (stareTime * 20);
@@ -60,8 +60,8 @@ public class ConfigManager {
                 strikeLightning,
                 mobs,
                 mobsWhitelist,
-                ignorePlayers,
-                ignorePrivileged);
+                true,
+                true);
 
         configFile.save();
         LOGGER.info("Successfully read and reloaded Stare of DOOM's config.");
