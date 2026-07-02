@@ -4,6 +4,7 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import kriperivi.stareofdoom.StareOfDoom;
 import kriperivi.stareofdoom.common.Config;
+import kriperivi.stareofdoom.network.EntityStareLost;
 import kriperivi.stareofdoom.network.EntityStaredAt;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
@@ -58,14 +59,16 @@ public class StareAtEntity {
         EntityLivingBase it = checkLastMatch(theGame.renderViewEntity, config.getMaxDistanceSquared());
 
         if (it == null) {
+            if (lastMatch != null && lastMatch.isEntityAlive())
+                StareOfDoom.PACKET_HANDLER.sendToServer(new EntityStareLost(lastMatch));
+
             it = pickPointedEntity(theGame.renderViewEntity, theGame.theWorld, config.getMaxDistanceSquared());
             lastMatch = it;
-            if (it == null) {
+            if (it == null)
                 return;
-            }
         }
 
-        StareOfDoom.LOGGER.info("Picked entity {}", it);
+        StareOfDoom.LOGGER.debug("Picked entity {}", it);
         StareOfDoom.PACKET_HANDLER.sendToServer(new EntityStaredAt(it.getEntityId()));
     }
 
@@ -76,17 +79,13 @@ public class StareAtEntity {
         if (lastMatch.isDead)
             return null;
 
-        if (entityIsDying(lastMatch))
+        if (!lastMatch.isEntityAlive())
             return null;
 
         if (isEntityNotObserved(ref, lastMatch, maxDist))
             return null;
 
         return lastMatch;
-    }
-
-    private static boolean entityIsDying(EntityLivingBase ent) {
-        return !ent.isEntityAlive();
     }
 
     private static EntityLivingBase pickPointedEntity(EntityLivingBase ref, World world, double maxDist) {
@@ -114,12 +113,9 @@ public class StareAtEntity {
                 if (!(entity instanceof EntityLivingBase))
                     continue;
 
-                if (!entity.canBeCollidedWith())
-                    continue;
-
                 it = (EntityLivingBase) entity;
 
-                if (entityIsDying(it))
+                if (!it.canBeCollidedWith() || !it.isEntityAlive())
                     continue;
 
                 if (!matchConfigFilters(it))
@@ -159,24 +155,9 @@ public class StareAtEntity {
         return !ref.canEntityBeSeen(tar);
     }
 
-    // TODO: Do all this on server-side.
-    // Figure out why MinecraftServer.getServer() is null
-    // Perhaps move the player stuff onto the server?
-    // Hmm...
+    // TODO: Verify filters on the server side too
+    // TODO: Handle the players somehow.
     private static boolean matchConfigFilters(EntityLivingBase entityLiving) {
-        // TODO: Handle the players somehow.
-//        if (entityLiving instanceof EntityOtherPlayerMP) {
-//            if (!MinecraftServer.getServer().isPVPEnabled())
-//                return false;
-//            if (config.doIgnorePlayers())
-//                return false;
-//            if (((EntityOtherPlayerMP) entityLiving).capabilities.isCreativeMode && config.doIgnorePrivileged())
-//                return false;
-//            if (((EntityOtherPlayerMP) entityLiving).canCommandSenderUseCommand(2, "") && config.doIgnorePrivileged())
-//                return false;
-//            return true;
-//        }
-
         boolean includes = mobFilterList.contains(EntityList.getEntityString(entityLiving));
 
         return includes == config.isMobsWhitelist();

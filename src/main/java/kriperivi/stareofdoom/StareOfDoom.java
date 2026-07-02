@@ -6,13 +6,17 @@ import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.event.FMLServerStoppedEvent;
 import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import cpw.mods.fml.relauncher.Side;
 import kriperivi.stareofdoom.common.Config;
 import kriperivi.stareofdoom.common.ConfigManager;
 import kriperivi.stareofdoom.common.DropListener;
+import kriperivi.stareofdoom.common.PardonManager;
+import kriperivi.stareofdoom.event.EntityChillOut;
 import kriperivi.stareofdoom.network.ConfigStringExchange;
+import kriperivi.stareofdoom.network.EntityStareLost;
 import kriperivi.stareofdoom.network.EntityStaredAt;
 import kriperivi.stareofdoom.proxy.Proxy;
 import net.minecraftforge.common.MinecraftForge;
@@ -39,19 +43,26 @@ public class StareOfDoom {
         CONFIG = new ConfigManager(event);
         proxy.preInit(event);
         MinecraftForge.EVENT_BUS.register(new DropListener());
+        MinecraftForge.EVENT_BUS.register(new EntityChillOut());
         FMLCommonHandler.instance().bus().register(CONFIG);
     }
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
-        PACKET_HANDLER.registerMessage(EntityStaredAt.Handler.class, EntityStaredAt.class, 0, Side.SERVER);
+        PACKET_HANDLER.registerMessage(EntityStaredAt.Handler.class, EntityStaredAt.class, 0x00, Side.SERVER);
+        PACKET_HANDLER.registerMessage(EntityStareLost.class, EntityStareLost.class, 0x01, Side.SERVER);
 
-        PACKET_HANDLER.registerMessage(Config.Handler.class, Config.class, 1, Side.CLIENT);
-        PACKET_HANDLER.registerMessage(ConfigStringExchange.class, ConfigStringExchange.class, 2, Side.CLIENT);
+        PACKET_HANDLER.registerMessage(Config.Handler.class, Config.class, 0x10, Side.CLIENT);
+        PACKET_HANDLER.registerMessage(ConfigStringExchange.class, ConfigStringExchange.class, 0x11, Side.CLIENT);
     }
 
     @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event) {
         CONFIG.verifyEntityList();
+    }
+
+    @Mod.EventHandler
+    public void serverShutdown(FMLServerStoppedEvent event) {
+        PardonManager.INSTANCE.onInternalServerShutdown(event);
     }
 }
