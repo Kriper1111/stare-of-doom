@@ -53,7 +53,7 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 
-    implementation("com.github.LegacyModdingMC.UniMixins:unimixins-mixin-1.7.10:$unimixins_version")
+    // implementation("com.github.LegacyModdingMC.UniMixins:unimixins-mixin-1.7.10:$unimixins_version")
     // compile("com.github.LegacyModdingMC.UniMixins:unimixins-all-1.7.10:$unimixins_version:dev")
 }
 
@@ -88,6 +88,8 @@ processResources
     }
 }
 
+/**
+ * No longer required due to mixins being dropped.
 jar {
     manifest {
         attributes (
@@ -115,6 +117,7 @@ tasks.compileJava.options.compilerArgs += ["-AreobfSrgFile=${tasks.reobf.srg}", 
 reobf {
     addExtraSrgFile outSrgFile
 }
+*/
 
 publishing {
     publications {
