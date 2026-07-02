@@ -49,10 +49,10 @@ public class StareOfDoom {
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
-        PACKET_HANDLER.registerMessage(EntityStaredAt.Handler.class, EntityStaredAt.class, 0x00, Side.SERVER);
+        PACKET_HANDLER.registerMessage(EntityStaredAt.class, EntityStaredAt.class, 0x00, Side.SERVER);
         PACKET_HANDLER.registerMessage(EntityStareLost.class, EntityStareLost.class, 0x01, Side.SERVER);
 
-        PACKET_HANDLER.registerMessage(Config.Handler.class, Config.class, 0x10, Side.CLIENT);
+        PACKET_HANDLER.registerMessage(Config.class, Config.class, 0x10, Side.CLIENT);
         PACKET_HANDLER.registerMessage(ConfigStringExchange.class, ConfigStringExchange.class, 0x11, Side.CLIENT);
     }
 

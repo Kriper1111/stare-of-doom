@@ -6,16 +6,17 @@ import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import io.netty.buffer.ByteBuf;
 import kriperivi.stareofdoom.StareOfDoom;
 import kriperivi.stareofdoom.event.StareAtEntity;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 
 import java.util.HashSet;
 
-public class Config implements IMessage {
+public class Config implements IMessage, IMessageHandler<Config, IMessage> {
     private double maxDistanceSquared = 0;
     private int stareThreshold = 0;
     private int stareFalloff = 0;
     private boolean strikeLightning = false;
-    // TODO: Synchronize the mob list too.
+
     private String[] mobs = null;
     private HashSet<String> mobFilterList = new HashSet<String>();
     private boolean mobsWhitelist = true;
@@ -67,6 +68,10 @@ public class Config implements IMessage {
         return ignorePrivileged;
     }
 
+    public boolean doesMobApply(Entity entity) {
+        return mobFilterList.contains(EntityList.getEntityString(entity)) == mobsWhitelist;
+    }
+
     public Config() { }
 
     @Override
@@ -91,6 +96,13 @@ public class Config implements IMessage {
         buf.writeBoolean(ignorePrivileged);
     }
 
+    @Override
+    public IMessage onMessage(Config message, MessageContext ctx) {
+        StareOfDoom.LOGGER.info("Received SetupConfig message from server, updating.");
+        StareAtEntity.setConfig(message);
+        return null;
+    }
+
     protected void buildEntityHash() {
         for (String mobName : mobs) {
             Object entity = EntityList.stringToClassMapping.get(mobName);
@@ -105,16 +117,6 @@ public class Config implements IMessage {
                 continue;
             }
             mobFilterList.add(mobName);
-        }
-    }
-
-    public static class Handler implements IMessageHandler<Config, IMessage> {
-
-        @Override
-        public IMessage onMessage(Config message, MessageContext ctx) {
-            StareOfDoom.LOGGER.info("Received SetupConfig message from server, updating.");
-            StareAtEntity.setConfig(message);
-            return null;
         }
     }
 }
